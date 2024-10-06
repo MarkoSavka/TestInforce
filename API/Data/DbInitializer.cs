@@ -1,4 +1,5 @@
 using API.DTO;
+using API.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -6,8 +7,14 @@ namespace API.Data;
 
 public static class DbInitializer
 {
-    public static async Task Initialize(MyDbContext context, UserManager<User> userManager)
+    public static async Task Initialize(MyDbContext context, UserManager<User> userManager, RoleManager<Role> roleManager)
     {
+        if (!roleManager.Roles.Any())
+        {
+            await roleManager.CreateAsync(new Role { Name = "Admin" });
+            await roleManager.CreateAsync(new Role { Name = "Member" });
+        }
+
         if (!userManager.Users.Any())
         {
             var user = new User

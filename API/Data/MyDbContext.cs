@@ -7,9 +7,7 @@ namespace API.Data;
 
 public class MyDbContext:IdentityDbContext<User,Role,int>
 {
-    public MyDbContext(DbContextOptions opt):base(opt)
-    {
-    }
+    public MyDbContext(DbContextOptions<MyDbContext> options) : base(options) { }
     public DbSet<URL> Urls { get; set; }
     protected override void OnModelCreating(ModelBuilder builder)
     {
