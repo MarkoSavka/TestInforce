@@ -3,16 +3,19 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity;
 
 namespace API.Controllers;
 
 public class UserController : BaseApiController
 {
     private readonly UserService _userService;
+    private readonly UserManager<User> _userManager;
 
-    public UserController(UserService userService)
+    public UserController(UserService userService,UserManager<User> userManager)
     {
         _userService = userService;
+        _userManager = userManager;
     }
 
     [HttpGet("users")]
@@ -55,11 +58,13 @@ public class UserController : BaseApiController
         return userDto;
     }
 
-    [Authorize(Roles = "Member")]
+    [Authorize(Roles = "Member,Admin")]
     [HttpGet("currentUser")]
     public async Task<ActionResult<UserDto>> GetCurrentUser()
     {
-        var userDto = await _userService.GetCurrentUserAsync(User.Identity.Name);
+        var username = User.Identity.Name;
+        var user = await _userManager.FindByNameAsync(username);
+        var userDto = await _userService.GetCurrentUserAsync(user.Email);
         if (userDto == null)
         {
             return Unauthorized();

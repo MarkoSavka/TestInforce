@@ -21,9 +21,9 @@ public class UserRepository : IUserRepository
         return await _context.Users.ToListAsync();
     }
 
-    public async Task<User> FindByNameAsync(string username)
+    public async Task<User> FindByEmailAsync(string email)
     {
-        return await _userManager.FindByNameAsync(username);
+        return await _userManager.FindByEmailAsync(email);
     }
 
     public async Task<IdentityResult> CreateAsync(User user, string password)

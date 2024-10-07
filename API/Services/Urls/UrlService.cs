@@ -28,7 +28,7 @@ public class UrlService
         return urlResponseDto;
     }
 
-    public async Task AddAsync(URLDto urlDto,DTO.User user)
+    public async Task AddAsync(URLDto urlDto,User user)
     {
         var url = _mapper.Map<URL>(urlDto);
         url.CreatedBy = user;
@@ -55,15 +55,36 @@ public class UrlService
     }
 
 
-    public async Task GenerateShortUrl(URLDto urlDto)
+    public async Task<URLDto> GenerateShortUrl(URLDto urlDto)
     {
-        var cleanedUrl = urlDto.FullUrl.Replace("https://", "").Replace(".com", "");
+        var cleanedUrl = urlDto.FullUrl.Replace("https://", "").Replace(".com", "").Replace("http://", "").Replace("/", "");
+
+        // Ensure shortUrl is generated if it's empty
+        if (string.IsNullOrWhiteSpace(cleanedUrl))
+        {
+            throw new ArgumentException("ShortUrl cannot be empty after cleaning.");
+        }
 
         urlDto.ShortUrl = cleanedUrl;
 
-        // Save the URL with the short URL
-        var url = _mapper.Map<URL>(urlDto);
-        await _urlRepository.AddUrlAsync(url);
+        // Check if URL with the same ID exists
+        var existingUrl = await _urlRepository.GetUrlById(urlDto.Id);
+        if (existingUrl != null)
+        {
+            // Update existing record
+            existingUrl.ShortUrl = urlDto.ShortUrl;
+            existingUrl.FullUrl = urlDto.FullUrl;
+            existingUrl.CreatedDate = urlDto.CreatedDate;
+            await _urlRepository.UpdateUrlAsync(existingUrl);
+        }
+        else
+        {
+            // Add new record
+            var url = _mapper.Map<URL>(urlDto);
+            await _urlRepository.AddUrlAsync(url);
+        }
+
+        return urlDto;
     }
     
 }

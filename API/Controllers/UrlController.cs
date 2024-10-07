@@ -20,6 +20,7 @@ namespace API.Controllers
         }
 
         [HttpGet("get")]
+        [Authorize(Roles="Member,Admin")]
         public async Task<ActionResult<List<URL>>> GetUrls()
         {
             var urls = await _urlService.GetAllAsync();
@@ -27,8 +28,8 @@ namespace API.Controllers
         }
 
         [HttpPost("add")]
-        [Authorize(Roles = "Member")]
-        public async Task<ActionResult> AddUrl(URLDto urlDto)
+        [Authorize(Roles = "Member,Admin")]
+        public async Task<ActionResult> AddUrl([FromBody]URLDto urlDto)
         {
             if (User.Identity?.Name == null)
             {
@@ -106,7 +107,26 @@ namespace API.Controllers
         {
             var url = await _urlService.GetByIdAsync(id);
             if (url == null) return NotFound();
-            return url;
+            return Ok(url);
+        }
+
+        [HttpPost("generate")]
+        [Authorize(Roles = "Member,Admin")]
+        public async Task<IActionResult> GenerateShortUrl([FromBody] URLDto urlDto)
+        {
+            if (User.Identity?.Name == null)
+            {
+                return Unauthorized("User is not authenticated.");
+            }
+
+            var user = await _userManager.FindByNameAsync(User.Identity.Name);
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+
+            var generatedUrl = await _urlService.GenerateShortUrl(urlDto);
+            return Ok(generatedUrl); // Ensure this returns a valid JSON response
         }
     }
 }

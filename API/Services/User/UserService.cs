@@ -39,7 +39,7 @@ public class UserService
 
     public async Task<UserDto> LoginAsync(LoginDto loginDto)
     {
-        var user = await _userRepository.FindByNameAsync(loginDto.Username);
+        var user = await _userRepository.FindByEmailAsync(loginDto.Email);
         if (user == null || !await _userRepository.CheckPasswordAsync(user, loginDto.Password))
         {
             return null;
@@ -57,6 +57,7 @@ public class UserService
 
         return new UserDto
         {
+            Id = user.Id,
             Email = user.Email,
             Name = user.UserName,
             Token = await _tokenService.GenerateToken(user),
@@ -64,9 +65,9 @@ public class UserService
         };
     }
 
-    public async Task<UserDto> GetCurrentUserAsync(string username)
+    public async Task<UserDto> GetCurrentUserAsync(string email)
     {
-        var user = await _userRepository.FindByNameAsync(username);
+        var user = await _userRepository.FindByEmailAsync(email);
 
         var userUrls = await RetrieveUrls(user);
 
@@ -80,6 +81,7 @@ public class UserService
 
         return new UserDto
         {
+            Id = user.Id,
             Email = user.Email,
             Name = user.UserName,
             Token = await _tokenService.GenerateToken(user),
@@ -89,11 +91,23 @@ public class UserService
 
     private async Task<List<URL>> RetrieveUrls(User user)
     {
-        if (user.Id == null)
+        if (user == null)
         {
-            return null;
+            throw new ArgumentNullException(nameof(user), "User cannot be null.");
         }
 
-        return await _context.Urls.Where(url => url.CreatedBy == user).ToListAsync();
+        if (user.Urls == null)
+        {
+            return new List<URL>();
+        }
+
+        return user.Urls.Select(url => new URL
+        {
+            Id = url.Id,
+            ShortUrl = url.ShortUrl,
+            FullUrl = url.FullUrl,
+            CreatedDate = url.CreatedDate,
+            CreatedById = url.CreatedById
+        }).ToList();
     }
 }
